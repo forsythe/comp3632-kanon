@@ -62,7 +62,7 @@ public class kanon {
 		for (int row = 0; row < k - 1; row++) {
 			for (int col = 0; col < numCols; col++) {
 				T[row][col] = Integer.MAX_VALUE;
-				startOfSet[row][col] = Integer.MAX_VALUE;
+				startOfSet[row][col] = -1;
 			}
 		}
 
@@ -76,7 +76,7 @@ public class kanon {
 		for (int col = 1; col < numCols; col++) {
 			for (int row = k - 1; row < numData; row++) {
 				T[row][col] = T[row][col - 1];
-				startOfSet[row][col] = startOfSet[row][col - 1];
+				startOfSet[row][col] = -1; // no set initially
 
 				for (int z = k; z <= row + 1 - k; z++) {
 					if (T[z - 1][col - 1] + getCost(z, row) < T[row][col]) {
@@ -100,6 +100,9 @@ public class kanon {
 
 		for (int curCol = numCols - 1; curCol >= 0; curCol--) {
 			int startIndex = startOfSet[curRow][curCol];
+			if (startIndex == -1) {
+				continue; // no set in this column
+			}
 			int median = records[(startIndex + endIndex) / 2].age;
 			for (int z = startIndex; z <= endIndex; z++) {
 				records[z].age = median;
@@ -131,11 +134,11 @@ public class kanon {
 	public static void main(String[] args) {
 		Record[] testData = {
 				//
-				new Record(20, 1),//
+				new Record(17, 1),//
+				new Record(20, 0),//
 				new Record(21, 0),//
 				new Record(22, 0),//
-				new Record(28, 0),//
-				new Record(28, 0),//
+				new Record(25, 0),//
 				new Record(29, 1),//
 				new Record(29, 1),//
 		};
@@ -144,6 +147,7 @@ public class kanon {
 		anonymizer.printRecords();
 
 		anonymizer.solve();
+		// anonymizer.printReconstruction();
 		anonymizer.reconstructSolution();
 
 		System.out.println("Anonymized data");
