@@ -19,7 +19,7 @@ class Record {
 }
 
 public class kanon {
-	public static final int K = 3; // K-anonymity
+	private int k; // k-anonymity
 
 	private int numData;
 	private int numCols;
@@ -27,18 +27,23 @@ public class kanon {
 	private int[][] startOfSet; // for reconstructing solution
 	private Record[] records;
 
-	public kanon(Record[] records) {
+	public kanon(Record[] records, int k) {
+		if (k > records.length) {
+			throw new IllegalArgumentException("Cannot have " + k
+					+ " anonymity with only " + records.length
+					+ " data elements");
+		}
+		this.k = k;
 		this.numData = records.length;
-		this.numCols = numData / K;
+		this.numCols = numData / k;
 		this.T = new int[numData][numCols];
 		this.startOfSet = new int[numData][numCols];
 		this.records = records;
 	}
 
 	public void printRecords() {
-		for (Record r : records) {
+		for (Record r : records)
 			System.out.println(r);
-		}
 	}
 
 	private int getCost(int start, int end) {
@@ -54,7 +59,7 @@ public class kanon {
 
 	public void solve() {
 		// initialize the invalid rows
-		for (int row = 0; row < K - 1; row++) {
+		for (int row = 0; row < k - 1; row++) {
 			for (int col = 0; col < numCols; col++) {
 				T[row][col] = Integer.MAX_VALUE;
 				startOfSet[row][col] = Integer.MAX_VALUE;
@@ -62,18 +67,18 @@ public class kanon {
 		}
 
 		// initialize base case (1 set)
-		for (int row = K - 1; row < numData; row++) {
+		for (int row = k - 1; row < numData; row++) {
 			T[row][0] = getCost(0, row);
 			startOfSet[row][0] = 0;
 		}
 
 		// apply recurrence
 		for (int col = 1; col < numCols; col++) {
-			for (int row = K - 1; row < numData; row++) {
+			for (int row = k - 1; row < numData; row++) {
 				T[row][col] = T[row][col - 1];
 				startOfSet[row][col] = startOfSet[row][col - 1];
 
-				for (int z = K; z <= row + 1 - K; z++) {
+				for (int z = k; z <= row + 1 - k; z++) {
 					if (T[z - 1][col - 1] + getCost(z, row) < T[row][col]) {
 						T[row][col] = T[z - 1][col - 1] + getCost(z, row);
 						startOfSet[row][col] = z;
@@ -84,26 +89,25 @@ public class kanon {
 			}
 		}
 
-		System.out.printf("Minimum change to achieve %d-anonymity: ", K);
+		System.out.printf("Minimum change to achieve %d-anonymity: ", k);
 		System.out.println(T[numData - 1][numCols - 1]);
 	}
 
 	public Record[] reconstructSolution() {
-		int curRow = numData - 1;
-		int curCol = numCols - 1;
 
-		int startIndex = startOfSet[curRow][curCol];
+		int curRow = numData - 1;
 		int endIndex = numData - 1;
-		while (startIndex > 0) {
+
+		for (int curCol = numCols - 1; curCol >= 0; curCol--) {
+			int startIndex = startOfSet[curRow][curCol];
 			int median = records[(startIndex + endIndex) / 2].age;
 			for (int z = startIndex; z <= endIndex; z++) {
 				records[z].age = median;
 			}
-			curRow -= (endIndex - startIndex);
-			curCol--;
 			endIndex = startIndex - 1;
-			startIndex = startOfSet[curRow][curCol];
+			curRow = endIndex;
 		}
+
 		return records;
 	}
 
@@ -128,20 +132,21 @@ public class kanon {
 		Record[] testData = {
 				//
 				new Record(20, 1),//
-				new Record(20, 0),//
-				new Record(20, 0),//
-				new Record(25, 0),//
-				new Record(25, 0),//
+				new Record(21, 0),//
+				new Record(22, 0),//
+				new Record(28, 0),//
+				new Record(28, 0),//
 				new Record(29, 1),//
 				new Record(29, 1),//
 		};
-		kanon anonymizer = new kanon(testData);
+		kanon anonymizer = new kanon(testData, 3);
 		System.out.println("Original data");
 		anonymizer.printRecords();
-		anonymizer.solve();
 
+		anonymizer.solve();
 		anonymizer.reconstructSolution();
-		System.out.println("k-anonymized data");
+
+		System.out.println("Anonymized data");
 		anonymizer.printRecords();
 
 	}
