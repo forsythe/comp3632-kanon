@@ -8,8 +8,10 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 import java.util.Random;
 import java.util.Set;
 
@@ -230,6 +232,36 @@ public class kanon2 {
 	// }
 	// }
 
+	private static boolean checkIfDataAlreadySatifiesKAnonymity(
+			String filename, int k) throws FileNotFoundException, IOException {
+		Map<String, Integer> count = new HashMap<String, Integer>();
+
+		try (BufferedReader reader = new BufferedReader(
+				new FileReader(filename))) {
+
+			String line;
+			while ((line = reader.readLine()) != null) {
+				line = line.replace(" ", "");
+				line = line.substring(0, line.lastIndexOf(','));
+				// System.out.println(line);
+				if (count.containsKey(line)) {
+					count.put(line, 1 + count.get(line));
+				} else {
+					count.put(line, 1);
+				}
+			}
+		}
+		int min = Integer.MAX_VALUE;
+		for (String s : count.keySet()) {
+			if (count.get(s) < min) {
+				min = count.get(s);
+			}
+			// System.out.printf("Key [%s], count [%d]\n", s, count.get(s));
+		}
+		return min >= k;
+
+	}
+
 	public static final int K = 4;
 
 	public static void main(String[] args) throws FileNotFoundException,
@@ -238,6 +270,11 @@ public class kanon2 {
 		if (args.length != 1) {
 			System.err.println("Usage: java kanon2 <filename>");
 			System.exit(-1);
+		}
+
+		if (checkIfDataAlreadySatifiesKAnonymity(args[0], K)) {
+			System.out.println("data already satisfies " + K + "-anonymity...");
+			return;
 		}
 
 		Set<Record6d> records = new HashSet<>();
@@ -277,14 +314,14 @@ public class kanon2 {
 		}
 		Collections.sort(ans);
 
-		// try (PrintWriter pw = new PrintWriter(new BufferedWriter(
-		// new FileWriter(args[0])))) {
-		// for (int j = 0; j < ans.size(); j++) {
-		// pw.print(ans.get(j));
-		// if (j < ans.size() - 1)
-		// pw.println();
-		// }
-		// }
+		try (PrintWriter pw = new PrintWriter(new BufferedWriter(
+				new FileWriter(args[0])))) {
+			for (int j = 0; j < ans.size(); j++) {
+				pw.print(ans.get(j));
+				if (j < ans.size() - 1)
+					pw.println();
+			}
+		}
 
 		System.out.println("Converted to " + K + "-anonymity with cost: "
 				+ totalInfoLossCost);
